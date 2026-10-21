@@ -37,13 +37,36 @@ void App::HandleEvent(SDL_Event& event) {
   if (HandleTextTyping(event)) {
     return;
   }
-  HandleSlideStep(event);
-  HandleMouseMotion(event);
-  HandleMouseWheel(event);
-  HandleMouseButtonDown(event);
-  HandleMouseButtonUp(event);
-  HandlePenEvent(event);
-  HandleWindowEvent(event);
+  // Each handler only sees its own event type (SDL_Event is a union:
+  // reading e.g. event.button for a motion event yields garbage).
+  switch (event.type) {
+    case SDL_EVENT_KEY_DOWN:
+      HandleSlideStep(event);
+      break;
+    case SDL_EVENT_MOUSE_MOTION:
+      HandleMouseMotion(event);
+      break;
+    case SDL_EVENT_MOUSE_WHEEL:
+      HandleMouseWheel(event);
+      break;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+      HandleMouseButtonDown(event);
+      break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+      HandleMouseButtonUp(event);
+      break;
+    case SDL_EVENT_PEN_BUTTON_DOWN:
+    case SDL_EVENT_PEN_BUTTON_UP:
+    case SDL_EVENT_PEN_MOTION:
+      HandlePenEvent(event);
+      break;
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+      HandleWindowEvent(event);
+      break;
+    default:
+      break;
+  }
   input.HandleEvent(event);
   // Entering the main menu: persist work first so the file list shows it,
   // then refresh and highlight the open document.
