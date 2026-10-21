@@ -4,9 +4,12 @@
 
 # Binary formats must never be line-ending converted.
 *.nano binary
-*.png binary
 *.jpg binary
 *.jpeg binary
 *.ttf binary
 *.ttc binary
 *.otf binary
+
+# Large binaries go through Git LFS (requires `git lfs install` once
+# per machine; `git lfs install --local` keeps it scoped to this repo).
+*.png filter=lfs diff=lfs merge=lfs -text

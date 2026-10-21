@@ -2,6 +2,8 @@
 
 A fast and lightweight modal, keyboard-driven 2D sketching app.
 
+![Screenshot](.github/screenshot.png)
+
 This is not meant to be a replacement for professional digital painting software. We want to give you a fast and free digital alternative to your pocket notebook.
 
 ## Features
