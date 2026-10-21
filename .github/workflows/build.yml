@@ -1,0 +1,63 @@
+name: build
+
+# Verifies the project configures and compiles on all supported platforms.
+# SDL3 is built from a pinned source release (distro packages vary too much
+# to rely on); Blend2D + AsmJit come via the project's own FetchContent.
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  SDL_VERSION: release-3.2.30
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    # Bash everywhere (incl. Windows via Git Bash) so the same
+    # $VARIABLE syntax works on all three platforms.
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake git pkg-config \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev \
+            libxi-dev libxss-dev libxkbcommon-dev libwayland-dev \
+            libdecor-0-dev libdrm-dev libgbm-dev libdbus-1-dev libudev-dev \
+            libpulse-dev libasound2-dev
+
+      - name: Build and install SDL3
+        run: |
+          git clone --depth 1 --branch "$SDL_VERSION" \
+            https://github.com/libsdl-org/SDL.git sdl3-src
+          cmake -S sdl3-src -B sdl3-build \
+            -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+            -DCMAKE_INSTALL_PREFIX="$PWD/sdl3-install" \
+            -DSDL_TESTS=OFF \
+            -DSDL_EXAMPLES=OFF
+          cmake --build sdl3-build --config "$BUILD_TYPE" --parallel
+          cmake --install sdl3-build --config "$BUILD_TYPE"
+
+      - name: Configure nanote
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+            -DCMAKE_PREFIX_PATH="$PWD/sdl3-install"
+
+      - name: Build nanote
+        run: cmake --build build --config "$BUILD_TYPE" --parallel

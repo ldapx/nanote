@@ -1,0 +1,12 @@
+# Normalize line endings on checkout (CRLF on Windows, LF elsewhere)
+# so sources stay consistent across platforms.
+* text=auto
+
+# Binary formats must never be line-ending converted.
+*.nano binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ttf binary
+*.ttc binary
+*.otf binary
