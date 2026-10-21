@@ -439,6 +439,23 @@ class InputManager {
     browse_requested_ = false;
     return r;
   }
+  // Undo/redo requests (Ctrl+Z / Ctrl+Shift+Z, or the undo/redo commands).
+  void RequestUndo() {
+    undo_requested_ = true;
+  }
+  [[nodiscard]] bool ConsumeUndoRequest() {
+    const bool r = undo_requested_;
+    undo_requested_ = false;
+    return r;
+  }
+  void RequestRedo() {
+    redo_requested_ = true;
+  }
+  [[nodiscard]] bool ConsumeRedoRequest() {
+    const bool r = redo_requested_;
+    redo_requested_ = false;
+    return r;
+  }
   struct NewDocRequest {
     DocType type = DocType::kInfinite;
     float page_w = 1920.0f;
@@ -554,6 +571,8 @@ class InputManager {
   bool browse_requested_ = false;
   bool leader_pressed_ = false;
   bool quit_requested_ = false;
+  bool undo_requested_ = false;
+  bool redo_requested_ = false;
 
   bool command_mode_active_ = false;
   std::string command_buffer_;

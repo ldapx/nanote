@@ -137,6 +137,7 @@ void App::HandleEvent(SDL_Event& event) {
   // Global Delete key: remove the current selection or the edited node.
   if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_DELETE &&
       !input.IsCommandModeActive() && !input.IsInMainMenu()) {
+    BeginHistory();
     if (input.GetMode() == Mode::kNode && node_editor.editing &&
         node_editor.selected_node >= 0) {
       DeleteNode(node_editor.path, node_editor.selected_node);
@@ -190,6 +191,7 @@ void App::HandleEvent(SDL_Event& event) {
         selection.Clear();
       }
     }
+    CommitHistory();
   }
 }
 
@@ -220,12 +222,14 @@ bool App::HandleTextTyping(SDL_Event& event) {
           text_editor.cursor_visible = true;
         } else {
           // SingleLine: commit on Enter.
+          BeginHistory();
           Layer* active =
               layer_stack.GetLayers()[layer_stack.GetActiveLayerIndex()].get();
           CommitEditorText(
               active, text_editor.text, text_editor.x, text_editor.y,
               text_editor.font_size, text_editor.object_index,
               color_manager.GetCurrentColor(), ui_typeface, BoundedPage());
+          CommitHistory();
           session.dirty = true;
           text_editor.active = false;
         }
@@ -555,6 +559,11 @@ void App::HandleMouseButtonDown(SDL_Event& event) {
       gestures.StartSize(event.button.x, event.button.y);
     }
     const PressGate press{ui_consumed, press_off_limits};
+    if (!ui_consumed && !input.IsInMainMenu() && !gestures.size_active) {
+      // A canvas press may mutate the document; snapshot first. No-op
+      // gestures drop the slot at release (CommitHistory dedups).
+      BeginHistory();
+    }
     HandleDrawPress(event, press);
     HandleShapePress(event, press);
     HandleErasePress(event, press);
@@ -1058,6 +1067,8 @@ void App::HandleMouseButtonUp(SDL_Event& event) {
       gestures.zoom_source = 0;
     }
   }
+  // Close any transaction opened by the matching press (no-op if none).
+  CommitHistory();
 }
 
 void App::HandleLeftRelease() {

@@ -17,6 +17,7 @@
 #include "doc/document.h"
 #include "drawing/drawing.h"
 #include "drawing/node_editor.h"
+#include "history/history.h"
 #include "input/input_manager.h"
 #include "layer/layer.h"
 
@@ -118,6 +119,7 @@ struct App {
   ColorManager color_manager;
   CommandExecutor executor;
   OpenDocument session;  // current .nano document (name + dirty flag)
+  HistoryManager history_;
 
   std::shared_ptr<Typeface> ui_typeface;
 
@@ -154,6 +156,15 @@ struct App {
   // Drop a floating raster selection, pasting its pixels at their current
   // position. No-op when no drag is in flight.
   void CommitFloat();
+  // Unbounded undo/redo over whole-document snapshots. Mutating gestures
+  // and commands bracket work in Begin/CommitHistory; only real changes
+  // (detected by fingerprint) consume undo entries.
+  void BeginHistory();
+  void CommitHistory();
+  void ClearHistory();
+  void CancelTransientsForHistory();
+  bool Undo();
+  bool Redo();
   // Page rect for bounded documents (and slideshows); empty otherwise.
   [[nodiscard]] Rect BoundedPage() const;
   // Clamp a canvas point into the page (no-op without one).

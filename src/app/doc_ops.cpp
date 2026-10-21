@@ -25,6 +25,65 @@ void App::CommitFloat() {
   gizmo.float_layer = -1;
 }
 
+void App::BeginHistory() {
+  history_.Begin(layer_stack, session.props);
+}
+
+void App::CommitHistory() {
+  history_.Commit(layer_stack, session.props);
+}
+
+void App::ClearHistory() {
+  history_.Clear();
+}
+
+// Drops transient editing state so an undo/redo restore lands on a clean,
+// consistent document. Uncommitted text drafts are discarded (same as the
+// Esc-cancel path); node edits are cleared like a document swap does.
+void App::CancelTransientsForHistory() {
+  stroke.is_drawing = false;
+  stroke.points.clear();
+  shape.is_active = false;
+  select_rect.is_active = false;
+  lasso_active = false;
+  lasso_points.clear();
+  text_editor.active = false;
+  text_editor.text.clear();
+  text_editor.original_text.clear();
+  text_editor.object_index = -1;
+  gizmo.dragging = false;
+  gizmo.handle = -1;
+  gizmo.active = false;
+  gizmo.raster_float = RasterFloat();
+  gizmo.float_layer = -1;
+  node_editor.Clear();
+  ruler.measuring = false;
+  ruler.angle_stage = 0;
+  gestures.CancelAll(window);
+  input.CloseToolMenu();
+  input.SetToolMenuDragging(-1);
+}
+
+bool App::Undo() {
+  CommitHistory();  // anchor any in-progress gesture as its own entry first
+  CancelTransientsForHistory();
+  if (!history_.Undo(layer_stack, session.props)) {
+    return false;
+  }
+  session.dirty = true;
+  return true;
+}
+
+bool App::Redo() {
+  CommitHistory();
+  CancelTransientsForHistory();
+  if (!history_.Redo(layer_stack, session.props)) {
+    return false;
+  }
+  session.dirty = true;
+  return true;
+}
+
 // Page rect for bounded documents (and slideshows); empty otherwise.
 Rect App::BoundedPage() const {
   if (!session.props.has_page()) {
@@ -71,6 +130,9 @@ void App::CancelGestures() {
   gestures.CancelAll(window);
   input.CloseToolMenu();
   input.SetToolMenuDragging(-1);
+  // Close any transaction opened by the cancelled gesture, so it can't
+  // swallow later commits. The fingerprint drops it if nothing changed.
+  CommitHistory();
 }
 
 // Full transient reset when swapping documents.
@@ -85,8 +147,9 @@ void App::ResetForDocument() {
 }
 
 void App::NewDocument(DocType type, float page_w, float page_h) {
-  CommitFloat();  // drop any in-flight pixels
-                  // before swapping stacks
+  ClearHistory();  // history never crosses documents
+  CommitFloat();   // drop any in-flight pixels
+                   // before swapping stacks
   layer_stack = LayerStack();
   viewport = Viewport();
   viewport.window_width_ = window_width;
@@ -119,8 +182,9 @@ bool App::OpenPath(const std::string& path) {
   if (!LoadDocument(path, loaded, view, ui_typeface, props)) {
     return false;
   }
-  CommitFloat();  // drop any in-flight pixels
-                  // before swapping stacks
+  ClearHistory();  // history never crosses documents
+  CommitFloat();   // drop any in-flight pixels
+                   // before swapping stacks
   layer_stack = std::move(loaded);
   viewport = view;
   session.name = DocNameFromPath(path);

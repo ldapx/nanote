@@ -186,6 +186,23 @@ void InputManager::HandleKeyDown(const SDL_Event& event) {
     return;
   }
 
+  // Undo/redo are canvas-only (command bar and documents menu have their
+  // own text handling) and are not repeatable: one keypress, one step.
+  {
+    const bool ctrl = (event.key.mod & SDL_KMOD_CTRL) != 0;
+    const bool shift = (event.key.mod & SDL_KMOD_SHIFT) != 0;
+    if (ctrl && !in_main_menu_) {
+      if (key == SDLK_Z && !shift) {
+        RequestUndo();
+        return;
+      }
+      if ((key == SDLK_Z && shift) || key == SDLK_Y) {
+        RequestRedo();
+        return;
+      }
+    }
+  }
+
   if (HandleEscapeKey(key)) {
     return;
   }

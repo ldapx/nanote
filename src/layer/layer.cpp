@@ -478,6 +478,19 @@ void LayerStack::Clear() {
   selection_.Clear();
 }
 
+void LayerStack::ReplaceAll(std::vector<std::unique_ptr<Layer>> layers,
+                            int active) {
+  layers_ = std::move(layers);
+  selection_.Clear();
+  active_layer_index_ = 0;
+  if (!layers_.empty()) {
+    if (active < 0) active = 0;
+    if (active >= static_cast<int>(layers_.size()))
+      active = static_cast<int>(layers_.size()) - 1;
+    active_layer_index_ = active;
+  }
+}
+
 char LayerStack::GetLayerKeybinding(int index) const {
   static const char* kKeys = "zxcvbnm";
   int n = static_cast<int>(layers_.size());

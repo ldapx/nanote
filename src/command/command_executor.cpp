@@ -173,6 +173,8 @@ constexpr CommandSpec kCommandSpecs[] = {
     {"distribute", "distribute h|v"},
     {"group", "group"},
     {"ungroup", "ungroup"},
+    {"undo", "undo"},
+    {"redo", "redo"},
     {"save", "save [<name>]"},
     {"saveas", "saveas <name>"},
     {"open", "open <name>"},
@@ -254,6 +256,10 @@ void CommandExecutor::Execute(const std::string& command,
     ExecuteGroup(layer_stack, doc);
   } else if (verb == "ungroup") {
     ExecuteUngroup(layer_stack, doc);
+  } else if (verb == "undo") {
+    input.RequestUndo();
+  } else if (verb == "redo") {
+    input.RequestRedo();
   } else if (verb == "save" || verb == "saveas" || verb == "open" ||
              verb == "new") {
     ExecuteFile(command, tokens, layer_stack, input, viewport, doc);

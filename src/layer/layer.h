@@ -147,6 +147,9 @@ class LayerStack {
   // Merge all visible layers into a single raster layer.
   void Flatten();
 
+  // Replaces the whole stack (history restore). Active index is clamped.
+  void ReplaceAll(std::vector<std::unique_ptr<Layer>> layers, int active);
+
   [[nodiscard]] const std::vector<std::unique_ptr<Layer>>& GetLayers() const {
     return layers_;
   }

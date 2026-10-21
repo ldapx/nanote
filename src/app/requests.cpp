@@ -34,6 +34,12 @@
 namespace nanote {
 
 void App::ProcessRequests() {
+  if (input.ConsumeUndoRequest()) {
+    Undo();
+  }
+  if (input.ConsumeRedoRequest()) {
+    Redo();
+  }
   ProcessCommandBar();
   ProcessDocRequests();
   UpdateWindowTitle(window, session, input.IsInMainMenu());
@@ -57,10 +63,12 @@ void App::ProcessCommandBar() {
     const std::string cmd = input.GetCommandBuffer();
     const Vec2 cursor_canvas = viewport.ScreenToCanvas(mouse_x, mouse_y);
     const int prev_palette_index = color_manager.GetCurrentPaletteIndex();
+    BeginHistory();
     CommitFloat();  // anchor floating pixels
                     // before the command runs
     executor.Execute(cmd, layer_stack, input, viewport, color_manager,
                      cursor_canvas, session);
+    CommitHistory();
     if (color_manager.GetCurrentPaletteIndex() != prev_palette_index) {
       input.SetDisplayedTone(color_manager.GetActivePaletteDefaultTone());
     }
@@ -193,12 +201,14 @@ void App::ProcessModeExits() {
 
   // If we left text mode, commit any pending text edits.
   if (input.GetMode() != Mode::kText && text_editor.active) {
+    BeginHistory();
     Layer* active =
         layer_stack.GetLayers()[layer_stack.GetActiveLayerIndex()].get();
     CommitEditorText(active, text_editor.text, text_editor.x, text_editor.y,
                      text_editor.font_size, text_editor.object_index,
                      color_manager.GetCurrentColor(), ui_typeface,
                      BoundedPage());
+    CommitHistory();
     session.dirty = true;
     text_editor.active = false;
   }
