@@ -13,7 +13,7 @@ This is not meant to be a replacement for professional digital painting software
 - Multi-layer support, where each layer can be a vector or a raster layer.
 - Infinite and bounded canvas documents.
 - Slideshow support.
-- Unlimited undo/redo with `Ctrl+Z` / `Ctrl+Shift+Z` (or the `undo` / `redo` commands).
+- Unlimited undo/redo history.
 - Cross-platform (Windows/macOS/Linux releases)
 - Lightweight and fast: no long startup times, just a canvas to start drawing right away.
 
